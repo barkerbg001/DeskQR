@@ -68,16 +68,15 @@ const QRGenerator = () => {
     setIsGenerating(true);
     try {
       const formattedInput = formatInput(input, qrType);
-      const canvas = canvasRef.current;
-      
-      await QRCode.toCanvas(canvas, formattedInput, {
+
+      // Use toDataURL so we don't depend on a mounted canvas element
+      const dataURL = await QRCode.toDataURL(formattedInput, {
         width: qrOptions.size,
         margin: qrOptions.margin,
         color: qrOptions.color,
         errorCorrectionLevel: qrOptions.errorCorrectionLevel,
       });
 
-      const dataURL = canvas.toDataURL();
       setQrDataURL(dataURL);
 
       // Save to history
@@ -99,13 +98,35 @@ const QRGenerator = () => {
   };
 
   const handleDownload = async (format = 'png') => {
-    if (!canvasRef.current) return;
-    
     try {
       const filename = `qr-code-${Date.now()}`;
-      await exportQRAsImage(canvasRef.current, filename, format);
+
+      // If we have a rendered canvas, use it. Otherwise, build a temporary
+      // canvas from the data URL so exportQRAsImage can use it.
+      if (canvasRef.current) {
+        await exportQRAsImage(canvasRef.current, filename, format);
+      } else if (qrDataURL) {
+        const img = new Image();
+        img.src = qrDataURL;
+        await new Promise((res, rej) => {
+          img.onload = res;
+          img.onerror = rej;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        await exportQRAsImage(canvas, filename, format);
+      } else {
+        throw new Error('No QR available to export');
+      }
+
       showNotification(`QR code downloaded as ${format.toUpperCase()}`);
     } catch (error) {
+      console.error('Export failed', error);
       showNotification('Failed to download QR code', 'error');
     }
   };
@@ -255,8 +276,9 @@ const QRGenerator = () => {
               {qrDataURL ? (
                 <>
                   <div className="p-4 bg-white rounded-lg shadow-inner">
-                    <canvas
-                      ref={canvasRef}
+                    <img
+                      src={qrDataURL}
+                      alt="QR Preview"
                       className="max-w-full h-auto"
                       style={{ display: qrDataURL ? 'block' : 'none' }}
                     />

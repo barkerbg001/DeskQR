@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiCode, 
-  FiCamera, 
-  FiCopy, 
-  FiDownload, 
-  FiTrash2, 
-  FiExternalLink,
-  FiSearch,
-  FiFilter,
-  FiCalendar,
-  FiCheck,
-  FiAlertCircle,
-  FiMoreVertical
-} from 'react-icons/fi';
+import * as FiIcons from 'react-icons/fi';
+
+// Safe destructure: if an icon is missing from the library, fall back to a
+// no-op component so rendering doesn't crash with "Element type is invalid".
+const {
+  FiCode = () => null,
+  FiCamera = () => null,
+  FiCopy = () => null,
+  FiDownload = () => null,
+  FiTrash2 = () => null,
+  FiExternalLink = () => null,
+  FiSearch = () => null,
+  FiFilter = () => null,
+  FiCalendar = () => null,
+  FiCheck = () => null,
+  FiAlertCircle = () => null,
+  FiMoreVertical = () => null,
+} = FiIcons;
 import { QRStorage, copyToClipboard, exportQRAsImage } from '../utils/storage';
 
 const History = () => {
@@ -408,7 +412,7 @@ const History = () => {
                 className="btn-primary"
                 onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'generate' }))}
               >
-                <FiQrCode className="w-4 h-4 mr-2" />
+                <FiCode className="w-4 h-4 mr-2" />
                 Generate QR Code
               </button>
               <button 
